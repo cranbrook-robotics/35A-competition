@@ -21,7 +21,7 @@ FlywheelSpeedController speedCtlr;
 task FlywheelSpeedControl() {
 	while(true){
 		update(speedCtlr);
-		delay(50);
+		delay(30);
 	}
 }
 
@@ -41,14 +41,6 @@ void setIntakeChain( int power ){
 }
 
 
-int buttonsToPower( int btnNegative, int btnPositive ){
-	if( vexRT[btnNegative] )
-		return -127;
-	if( vexRT[btnPositive] )
-		return 127;
-	return 0;
-}
-
 
 /////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -67,16 +59,14 @@ void pre_auton()
 
 
 	// power = A e^( B speed )
-	// 0.8869e0.1757x
-	const float A = 0.8869;
-	const float B = 0.1757;
+	const float A = 0.7771, B = 0.1816;
 
 	// Controller coefficients
-	const float Kq = 0.2, Kd = 0, Ki = 0.03;
+	const float Kq = 0.1, Ki = 0.03, Kd = 0;
 
 	const tMotor motorPorts[] =	{ mFly1, mFly2, mFly3, mFly4 };
 
-  FlywheelSpeedControllerInit( speedCtlr, Kq, Ki, Kd, A, B, motorPorts, 4 );
+  FlywheelSpeedControllerInit( speedCtlr, Kq, Ki, Kd, A, B, motorPorts, 4, M393Standard );
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -104,13 +94,14 @@ task autonomous()
 
 task usercontrol()
 {
-	const float FlyspeedMin = 6, FlyspeedMax = 11, FlyspeedIncrement = 0.25;
+	const float FlyspeedMin = 6, FlyspeedMax = 12, FlyspeedIncrement = 0.5;
 
 	float flyspeed = FlyspeedMin;
 	bool isFlywheelOn = false;
 
 	startTask( FlywheelSpeedControl );
 
+	time1[T1] = 0;
 	while (true)
 	{
 		setDrive( vexRT[ChJoyLY], vexRT[ChJoyRY] );
@@ -120,18 +111,22 @@ task usercontrol()
 		int turnOnFlywheel = vexRT[Btn8L];
 		int turnOffFlywheel = vexRT[Btn8R];
 
-		int speedUpFlywheel = vexRT[Btn8U];
-		int slowDownFlywheel = vexRT[Btn8D];
-
 		if( turnOnFlywheel || turnOffFlywheel ){
 			isFlywheelOn = (bool)turnOnFlywheel;
 			delay(200);
 		}
 
+		int speedUpFlywheel = vexRT[Btn8U];
+		int slowDownFlywheel = vexRT[Btn8D];
 		if( speedUpFlywheel || slowDownFlywheel ){
 			flyspeed += (speedUpFlywheel ? +FlyspeedIncrement : -FlyspeedIncrement);
 			flyspeed = bound( flyspeed, FlyspeedMin, FlyspeedMax );
 			delay(200);
+		}
+
+		if( vexRT[Btn7L] ){
+			flyspeed = FlyspeedMax;
+			isFlywheelOn = true;
 		}
 
 		setTargetSpeed( speedCtlr, isFlywheelOn ? flyspeed : 0 );
