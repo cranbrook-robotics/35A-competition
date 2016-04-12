@@ -59,14 +59,14 @@ void pre_auton()
 
 
 	// power = A e^( B speed )
-	const float A = 0.7771, B = 0.1816;
+	const float A = 1.2235, B = 0.1072;
 
 	// Controller coefficients
-	const float Kq = 0.1, Ki = 0.03, Kd = 0;
+	const float Kq = 0.2, Ki = 0.05, Kd = 0;
 
 	const tMotor motorPorts[] =	{ mFly1, mFly2, mFly3, mFly4 };
 
-  FlywheelSpeedControllerInit( speedCtlr, Kq, Ki, Kd, A, B, motorPorts, 4, M393Standard );
+  FlywheelSpeedControllerInit( speedCtlr, Kq, Ki, Kd, A, B, motorPorts, 4, M393HighSpeed );
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -94,12 +94,12 @@ task autonomous()
 
 task usercontrol()
 {
-	const float FlyspeedMin = 6, FlyspeedMax = 12, FlyspeedIncrement = 0.5;
+	const float FlyspeedMin = 8, FlyspeedMax = 16, FlyspeedIncrement = 0.5;
 
 	float flyspeed = FlyspeedMin;
 	bool isFlywheelOn = false;
 
-	startTask( FlywheelSpeedControl );
+	startTask( FlywheelSpeedControl, kHighPriority );
 
 	time1[T1] = 0;
 	while (true)
@@ -130,5 +130,7 @@ task usercontrol()
 		}
 
 		setTargetSpeed( speedCtlr, isFlywheelOn ? flyspeed : 0 );
+
+		delay(10);
 	}
 }
