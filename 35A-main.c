@@ -21,7 +21,7 @@ FlywheelSpeedController speedCtlr;
 task FlywheelSpeedControl() {
 	while(true){
 		update(speedCtlr);
-		delay(30);
+		delay(50);
 	}
 }
 
