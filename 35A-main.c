@@ -59,7 +59,8 @@ void pre_auton()
 
 
 	// power = A e^( B speed )
-	const float A = 1.2235, B = 0.1072;
+	//const float A = 1.2235, B = 0.1072;
+  const float A = 0.7686, B = 0.1304; // April 13th recharacterization
 
 	// Controller coefficients
 	const float Kq = 0.2, Ki = 0.05, Kd = 0;
@@ -67,6 +68,9 @@ void pre_auton()
 	const tMotor motorPorts[] =	{ mFly1, mFly2, mFly3, mFly4 };
 
   FlywheelSpeedControllerInit( speedCtlr, Kq, Ki, Kd, A, B, motorPorts, 4, M393HighSpeed );
+
+  // half of the flywheel motors are on the main brain battery; other half on the power expander.
+  setFlywheelBatteryConfig( speedCtlr, vPowerExpander, 0.5 );
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
