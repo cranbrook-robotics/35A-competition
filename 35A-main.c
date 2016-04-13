@@ -63,7 +63,7 @@ void pre_auton()
   const float A = 0.7686, B = 0.1304; // April 13th recharacterization
 
 	// Controller coefficients
-	const float Kq = 0.2, Ki = 0.05, Kd = 0;
+	const float Kq = 0.2, Ki = 0.02, Kd = 0;
 
 	const tMotor motorPorts[] =	{ mFly1, mFly2, mFly3, mFly4 };
 
