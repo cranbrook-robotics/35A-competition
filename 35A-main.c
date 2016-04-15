@@ -21,7 +21,7 @@ FlywheelSpeedController speedCtlr;
 task FlywheelSpeedControl() {
 	while(true){
 		update(speedCtlr);
-		delay(30);
+		delay(50);
 	}
 }
 
@@ -59,14 +59,18 @@ void pre_auton()
 
 
 	// power = A e^( B speed )
-	const float A = 0.7771, B = 0.1816;
+	//const float A = 1.2235, B = 0.1072;
+  const float A = 0.7686, B = 0.1304; // April 13th recharacterization
 
 	// Controller coefficients
-	const float Kq = 0.2, Ki = 0.03, Kd = 0;
+	const float Kq = 0.2, Ki = 0.02, Kd = 0;
 
 	const tMotor motorPorts[] =	{ mFly1, mFly2, mFly3, mFly4 };
 
-  FlywheelSpeedControllerInit( speedCtlr, Kq, Ki, Kd, A, B, motorPorts, 4, M393Standard );
+  FlywheelSpeedControllerInit( speedCtlr, Kq, Ki, Kd, A, B, motorPorts, 4, M393HighSpeed );
+
+  // half of the flywheel motors are on the main brain battery; other half on the power expander.
+  setFlywheelBatteryConfig( speedCtlr, vPowerExpander, 0.5 );
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -80,7 +84,7 @@ void pre_auton()
 
 task autonomous()
 {
-	startTask( FlywheelSpeedControl );
+	startTask( FlywheelSpeedControl, kHighPriority );
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -94,12 +98,12 @@ task autonomous()
 
 task usercontrol()
 {
-	const float FlyspeedMin = 6, FlyspeedMax = 12,FlyspeedMid = 9, FlyspeedIncrement = 0.5;
+	const float FlyspeedMin = 8, FlyspeedMid = 10, FlyspeedMax = 16, FlyspeedIncrement = 0.5;
 
 	float flyspeed = FlyspeedMin;
 	bool isFlywheelOn = false;
 
-	startTask( FlywheelSpeedControl );
+	startTask( FlywheelSpeedControl, kHighPriority );
 
 	time1[T1] = 0;
 	while (true)
@@ -132,15 +136,17 @@ task usercontrol()
 		if( vexRT[Btn7R] ){
 			flyspeed = FlyspeedMid;
 			isFlywheelOn = true;
+		}
 
 		setTargetSpeed( speedCtlr, isFlywheelOn ? flyspeed : 0 );
+
+		delay(10);
 	}
 }
-}
-if ( limitswitch = true){
-	limitcount = 1;
+//}
+//if ( limitswitch = true){
+//	limitcount = 1;
 
-	if (limitcount = 1 && limitswitch = false) {
-		IntakeDown until limitswitch = true
-	}
-
+//	if (limitcount = 1 && limitswitch = false) {
+//		IntakeDown until limitswitch = true
+//	}
