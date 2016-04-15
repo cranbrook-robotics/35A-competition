@@ -62,7 +62,7 @@ void pre_auton()
 	const float A = 0.7771, B = 0.1816;
 
 	// Controller coefficients
-	const float Kq = 0.1, Ki = 0.03, Kd = 0;
+	const float Kq = 0.2, Ki = 0.03, Kd = 0;
 
 	const tMotor motorPorts[] =	{ mFly1, mFly2, mFly3, mFly4 };
 
@@ -94,7 +94,7 @@ task autonomous()
 
 task usercontrol()
 {
-	const float FlyspeedMin = 6, FlyspeedMax = 12, FlyspeedIncrement = 0.5;
+	const float FlyspeedMin = 6, FlyspeedMax = 12,FlyspeedMid = 9, FlyspeedIncrement = 0.5;
 
 	float flyspeed = FlyspeedMin;
 	bool isFlywheelOn = false;
@@ -129,6 +129,18 @@ task usercontrol()
 			isFlywheelOn = true;
 		}
 
+		if( vexRT[Btn7R] ){
+			flyspeed = FlyspeedMid;
+			isFlywheelOn = true;
+
 		setTargetSpeed( speedCtlr, isFlywheelOn ? flyspeed : 0 );
 	}
 }
+}
+if ( limitswitch = true){
+	limitcount = 1;
+
+	if (limitcount = 1 && limitswitch = false) {
+		IntakeDown until limitswitch = true
+	}
+
