@@ -98,7 +98,7 @@ task autonomous()
 
 task usercontrol()
 {
-	const float FlyspeedMin = 8, FlyspeedMid = 10, FlyspeedMax = 16, FlyspeedIncrement = 0.5;
+	const float FlyspeedMin = 7.5, FlyspeedMid = 10, FlyspeedMax = 16, FlyspeedIncrement = 0.5;
 
 	float flyspeed = FlyspeedMin;
 	bool isFlywheelOn = false;
@@ -117,7 +117,6 @@ task usercontrol()
 
 		if( turnOnFlywheel || turnOffFlywheel ){
 			isFlywheelOn = (bool)turnOnFlywheel;
-			delay(200);
 		}
 
 		int speedUpFlywheel = vexRT[Btn8U];
@@ -125,7 +124,7 @@ task usercontrol()
 		if( speedUpFlywheel || slowDownFlywheel ){
 			flyspeed += (speedUpFlywheel ? +FlyspeedIncrement : -FlyspeedIncrement);
 			flyspeed = bound( flyspeed, FlyspeedMin, FlyspeedMax );
-			delay(200);
+			delay(100);
 		}
 
 		if( vexRT[Btn7L] ){
@@ -134,6 +133,11 @@ task usercontrol()
 		}
 
 		if( vexRT[Btn7R] ){
+			flyspeed = FlyspeedMin;
+			isFlywheelOn = true;
+		}
+
+		if( vexRT[Btn7U] ){
 			flyspeed = FlyspeedMid;
 			isFlywheelOn = true;
 		}
