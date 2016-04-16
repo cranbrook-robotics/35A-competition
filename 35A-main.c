@@ -10,6 +10,7 @@
 
 #include "Vex_Competition_Includes.c"   //Main competition background code...do not modify!
 
+#define POWER_EXPANDER_A1
 #include <CKFlywheelSpeedController.h>
 
 
@@ -38,6 +39,56 @@ void setIntakeRoller( int power ){
 
 void setIntakeChain( int power ){
 	motor[mIntakeF] = motor[mIntakeM] = motor[mIntakeB] = power;
+}
+
+const float DriveWheelDiameter = 4; //inches
+
+int feetToTicks( float feet ){
+	static const float conversion = 12 / (DriveWheelDiameter*PI) * TicksPerRev_393Turbo;
+	return (int)( feet * conversion );
+}
+
+float feetToDegrees( float feet ){
+	static const float conversion = 12 / (DriveWheelDiameter*PI) * 360;
+	return (int)( feet * conversion );
+}
+
+
+int getIMETicks(tMotor port){
+	int ticks = nMotorEncoder[port];
+	nMotorEncoder[port] = 0;
+	return ticks;
+}
+
+float driveDistanceFeet = 0;
+
+int slowingDistanceTicks = feetToTicks(2);
+
+task driveStraightTask(){
+	int ticks = feetToTicks( driveDistanceFeet );
+	int power = 127;
+	setDrive( power, power );
+	delay(100);
+	int leftTicks = 0, rightTicks = 0;
+	while( leftTicks < ticks || rightTicks < ticks ){
+		leftTicks += abs( getIMETicks(mDriveL) );
+		rightTicks += abs( getIMETicks(mDriveR) );
+		int error = leftTicks - rightTicks;
+		int turningOffset = 10 * error;
+		//int remaining = ticks - (leftTicks + rightTicks)/2;
+		setDrive( power - turningOffset, power + turningOffset );
+		delay( 50 );
+	}
+	setDrive(0,0);
+}
+
+void driveStraight( float distFt ){
+	driveDistanceFeet = distFt;
+	startTask( driveStraightTask );
+
+	//float angle = feetToDegrees(driveDistanceFeet);
+	//setMotorTarget(mDriveL, angle, 127);
+	//setMotorTarget(mDriveR, angle, 127);
 }
 
 
@@ -85,6 +136,10 @@ void pre_auton()
 task autonomous()
 {
 	startTask( FlywheelSpeedControl, kHighPriority );
+
+	driveStraight( 4 );
+	delay(4000);
+	driveStraight( 2 );
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
