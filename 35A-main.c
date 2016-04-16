@@ -14,7 +14,35 @@
 #include <CKFlywheelSpeedController.h>
 
 
+const float DriveWheelDiameter = 4.15;//inches
+const float DriveWheelCircumfrence = DriveWheelDiameter * PI;//inches
+const float WheelbaseWidth = 14.5;//inches
+const float WheelbaseLength = 11.5;//inches (1/2 inch per vex hole)
+const float WheelbaseDiagonal = sqrt( WheelbaseWidth*WheelbaseWidth + WheelbaseLength*WheelbaseLength );
 
+// If the arc length of a spin turn is X, then the omni wheels need to travel X*[this factor]
+// (derived triginometrically)
+const float DrivetrainSpinDisplacementFactor = WheelbaseWidth / WheelbaseDiagonal;
+
+
+
+
+int feetToTicks( float feet ){
+	static const float conversion = 12.0 / DriveWheelCircumfrence * TicksPerRev_393Turbo;
+	return (int)( feet * conversion );
+}
+
+float feetToDegrees( float feet ){
+	static const float conversion = 12.0 / DriveWheelCircumfrence * 360;
+	return (int)( feet * conversion );
+}
+
+
+float turningDistanceFeet( float degrees ){
+	float radians = degreesToRadians(degrees);
+	float arcLength = radians * (WheelbaseDiagonal / 2) / 12;
+	return arcLength * DrivetrainSpinDisplacementFactor;
+}
 
 FlywheelSpeedController speedCtlr;
 
@@ -41,18 +69,6 @@ void setIntakeChain( int power ){
 	motor[mIntakeF] = motor[mIntakeM] = motor[mIntakeB] = power;
 }
 
-const float DriveWheelDiameter = 4; //inches
-
-int feetToTicks( float feet ){
-	static const float conversion = 12 / (DriveWheelDiameter*PI) * TicksPerRev_393Turbo;
-	return (int)( feet * conversion );
-}
-
-float feetToDegrees( float feet ){
-	static const float conversion = 12 / (DriveWheelDiameter*PI) * 360;
-	return (int)( feet * conversion );
-}
-
 
 int getIMETicks(tMotor port){
 	int ticks = nMotorEncoder[port];
@@ -60,36 +76,55 @@ int getIMETicks(tMotor port){
 	return ticks;
 }
 
-float driveDistanceFeet = 0;
+//float driveDistanceFeet = 0;
 
-int slowingDistanceTicks = feetToTicks(2);
 
-task driveStraightTask(){
+
+float slowingFactor( int remainingTicks, int slowingDistanceTicks ){
+	if( remainingTicks > slowingDistanceTicks )
+		return 1;
+	return pow( 2, (float)remainingTicks / slowingDistanceTicks ) - 1;
+}
+
+
+//task driveStraightTask(){
+void go( float driveDistanceFeet, int dL = 1, int dR = 1 ){
 	int ticks = feetToTicks( driveDistanceFeet );
-	int power = 127;
-	setDrive( power, power );
+	int slowingDistanceTicks = feetToTicks( minimum(driveDistanceFeet / 2, 2) );
+	//int ticksL = ticks * dL;
+	//int ticksR = ticks * dR;
+	int basePower = 50;
+	getIMETicks(mDriveL);
+	getIMETicks(mDriveR);
+	setDrive( dL*basePower, dR*basePower );
 	delay(100);
 	int leftTicks = 0, rightTicks = 0;
-	while( leftTicks < ticks || rightTicks < ticks ){
-		leftTicks += abs( getIMETicks(mDriveL) );
-		rightTicks += abs( getIMETicks(mDriveR) );
-		int error = leftTicks - rightTicks;
-		int turningOffset = 10 * error;
-		//int remaining = ticks - (leftTicks + rightTicks)/2;
-		setDrive( power - turningOffset, power + turningOffset );
-		delay( 50 );
+	int remainingL = 1;
+	int remainingR = 1;
+	while( remainingL > 0 || remainingR > 0 ){
+		leftTicks += getIMETicks(mDriveL);
+		rightTicks += getIMETicks(mDriveR);
+		remainingL = ticks - dL*leftTicks;
+		remainingR = ticks - dR*rightTicks;
+		int error = dL*leftTicks - dR*rightTicks;
+		int turningOffset = (int)(1.5 * error);
+		//int _basePowerL = (int)( slowingFactor(remainingL, slowingDistanceTicks) * basePower );
+		//int _basePowerR = (int)( slowingFactor(remainingR, slowingDistanceTicks) * basePower );
+		int _basePowerL = basePower, _basePowerR = basePower;
+		setDrive( dL*_basePowerL - turningOffset, dR*_basePowerR + turningOffset );
+		delay(20);
 	}
 	setDrive(0,0);
 }
 
-void driveStraight( float distFt ){
-	driveDistanceFeet = distFt;
-	startTask( driveStraightTask );
+//void driveStraight( float distFt ){
+//	driveDistanceFeet = distFt;
+//	startTask( driveStraightTask );
 
-	//float angle = feetToDegrees(driveDistanceFeet);
-	//setMotorTarget(mDriveL, angle, 127);
-	//setMotorTarget(mDriveR, angle, 127);
-}
+//	//float angle = feetToDegrees(driveDistanceFeet);
+//	//setMotorTarget(mDriveL, angle, 127);
+//	//setMotorTarget(mDriveR, angle, 127);
+//}
 
 
 
@@ -137,9 +172,9 @@ task autonomous()
 {
 	startTask( FlywheelSpeedControl, kHighPriority );
 
-	driveStraight( 4 );
-	delay(4000);
-	driveStraight( 2 );
+	//go( 4 );
+	//delay(4000);
+	go( turningDistanceFeet(90), 1, -1 );
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
